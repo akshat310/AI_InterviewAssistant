@@ -1,0 +1,21 @@
+# Virtual env
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment secrets
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini
