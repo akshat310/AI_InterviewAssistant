@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.db.init_db import init_db
+from app.api.interview import router as interview_router
 
 settings = get_settings()
 
@@ -24,7 +25,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Routers ──────────────────────────────────────
+app.include_router(interview_router)
 
+
+# ── Root routes ──────────────────────────────────
 @app.get("/", tags=["Root"])
 async def root():
     return {
@@ -39,6 +44,7 @@ async def root():
 async def health_check():
     return {"status": "healthy ✅"}
 
+
 @app.get("/test-gemini", tags=["Test"])
 async def test_gemini():
     from app.core.interviewer import test_gemini_connection
@@ -47,8 +53,7 @@ async def test_gemini():
         return {"status": "connected ✅", "gemini_says": response}
     except Exception as e:
         return {"status": "failed ❌", "error": str(e)}
-    
-    
+
 
 @app.get("/list-models", tags=["Test"])
 async def list_models():
