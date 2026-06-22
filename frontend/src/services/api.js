@@ -10,6 +10,8 @@ export const interviewAPI = {
   submitAnswer:(data)      => api.post('/interview/answer', data),
   end:         (sessionId) => api.post('/interview/end', { session_id: sessionId }),
   getTopics:   ()          => api.get('/interview/topics'),
+  getTemplate: (data)      => api.post('/interview/template', data),
+  chat:        (data)      => api.post('/interview/chat', data),
 }
 
 export default api

@@ -1,3 +1,4 @@
+from typing import Dict, Any
 from fastapi import APIRouter, HTTPException
 from app.schemas.interview import (
     StartInterviewRequest,
@@ -215,3 +216,91 @@ async def get_topics():
             "supports_coding": ["python", "java", "cpp"]
         }
     }
+
+@router.post("/chat")
+async def interviewer_chat(request: Dict[str, Any]):
+    """
+    AI reacts to what candidate says while coding.
+    Returns a short interviewer response / follow-up.
+    """
+    from app.core.interviewer import get_gemini_model
+    
+    question    = request.get("question", "")
+    what_said   = request.get("what_said", "")
+    code_so_far = request.get("code_so_far", "")
+    topic       = request.get("topic", "dsa")
+    language    = request.get("language", "Python")
+
+    if not what_said.strip():
+        return {"response": None}
+
+    prompt = f"""You are a live technical interviewer at a top tech company.
+The candidate is solving this problem: {question}
+
+What they just said while coding: "{what_said}"
+
+Their code so far:
+{code_so_far or "(nothing written yet)"}
+
+React naturally as an interviewer would in a real interview.
+Rules:
+- Keep response SHORT — 1-2 sentences max
+- Ask a follow-up if something is unclear or interesting
+- Confirm good thinking with brief encouragement
+- Point out a concern if you spot a bug or wrong direction
+- Sound human, not robotic
+- Do NOT give away the answer
+- If they're on the right track, say so briefly
+
+Return ONLY your spoken response, nothing else."""
+
+    model    = get_gemini_model()
+    response = model.generate_content(prompt)
+    return {"response": response.text.strip()}
+
+@router.post("/template")
+async def get_code_template(request: Dict[str, Any]):
+    """Generate LeetCode-style starter code template for a question."""
+    from app.core.interviewer import get_gemini_model
+
+    question = request.get("question", "")
+    language = request.get("language", "Python")
+    topic    = request.get("topic", "dsa")
+
+    prompt = f"""You are generating a LeetCode-style starter code template.
+
+Question: {question}
+Language: {language}
+Topic: {topic}
+
+Generate ONLY the starter code template — no explanation, no markdown, no backticks.
+Rules:
+- Include the class definition and method signature
+- Add meaningful parameter names based on the problem
+- Add type hints (for Python/Java/C++)
+- Add a short comment for each parameter explaining what it is
+- Leave the body with just a placeholder comment "# Your code here" (or language equivalent)
+- For DSA: include any helper classes needed (e.g. ListNode, TreeNode) as comments above
+- Make it feel exactly like LeetCode starter code
+- Include example in comments at top
+
+Example for Python Two Sum:
+# Example: nums = [2,7,11,15], target = 9 -> [0,1]
+# Definition: Given array nums and target, return indices
+
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        # Your code here
+        pass
+
+Return ONLY the code, nothing else."""
+
+    model    = get_gemini_model()
+    response = model.generate_content(prompt)
+    template = response.text.strip()
+
+    # Clean any accidental markdown
+    import re
+    template = re.sub(r'```[\w]*\n?', '', template).strip()
+
+    return {"template": template}
